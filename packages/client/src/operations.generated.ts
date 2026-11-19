@@ -3686,6 +3686,17 @@ export type SdkRunEventsBody = {
     type: "session";
     session_id: string;
   } | {
+    type: "workflow_check";
+    id: string;
+    digest: string;
+    outcome: "answered" | "handed_back" | "failed" | "skipped_write";
+    answer?: string;
+    reason?: string;
+    skipped?: {
+      tool: string;
+      unmarked?: true;
+    };
+  } | {
     type: "tool";
     id: string;
     name: string;
@@ -3743,6 +3754,16 @@ export type StartSdkRunResponse = {
       workflow: string;
       description: string;
     }>;
+    check?: {
+      id: string;
+      revision: string;
+      digest: string;
+      workflow: {
+        name: string;
+        workflow: string;
+        description: string;
+      };
+    };
   };
 };
 
