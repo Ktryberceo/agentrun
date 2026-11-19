@@ -963,6 +963,13 @@ export type Capabilities = {
   features: Features;
   regions: Array<Region>;
   limits: Limits;
+  learning_model: {
+    location: "server" | "native";
+    ready: boolean;
+    model: string | null;
+    needs: "key" | "model" | null;
+    reason: string | null;
+  };
   learning: {
     pending: true;
     approve: boolean;
@@ -2077,6 +2084,13 @@ export type GetLearningCostResponse = {
 
 /** What the agent has learned: its corrections, workflow drafts, log of changes and counts (GET /agents/{agent_id}/learning). */
 export type GetAgentLearningResponse = {
+  learning_model: {
+    location: "server" | "native";
+    ready: boolean;
+    model: string | null;
+    needs: "key" | "model" | null;
+    reason: string | null;
+  };
   agent: string;
   main: string | null;
   corrections: string;
