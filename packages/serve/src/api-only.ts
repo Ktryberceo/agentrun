@@ -15,9 +15,11 @@ export const API_ONLY_ENV = "AGENTRUN_API_ONLY";
  *  folders are on Archil (GET /workspace/archil, archil-routes.ts), while their writes, tests and key choices stay the
  *  console's; and a run's hosted machine that dials fetching this server's computerd with its own token
  *  (computer-attach.ts), as it dials the attach socket, which the upgrade takes for such a machine alone (a paired
- *  computer is the console's). */
+ *  computer is the console's). A run's computer, its take-over and hand-back, and its viewer credential's mint
+ *  (viewer-credential.ts) take the server's token here, the backend's own: the live page and socket take that credential. */
 export const API_ONLY_ROUTES: ReadonlySet<string> = new Set([
   "createRun", "createInlineRun", "getComputerDaemon",
+  "getRunComputer", "takeOverRunComputer", "handBackRunComputer", "createRunComputerViewer",
   "listComputers", "getWorkspaceArchil",
   "getAgentArchil", "deleteAgentArchil", "deleteAgent",
   "getRun", "listRuns", "listAllRuns", "getTimeline",
@@ -36,12 +38,16 @@ export function apiOnlyFrom(env: NodeJS.ProcessEnv = process.env): boolean {
   throw new TypeError(`${API_ONLY_ENV} is 1 (serve the run API only) or 0 (the whole server), not ${JSON.stringify(env[API_ONLY_ENV])}`);
 }
 
+/** A run's computer live view: its page, files and socket, which take the viewer credential alone here (server.ts). */
+const COMPUTER_LIVE = /^\/v2\/runs\/[^/]+\/computer\/live\//;
+
 /** Whether an API-only server serves `method` on `raw` (the path as sent, its query cut): a /v2 path one of
- *  API_ONLY_ROUTES matches for that method (HEAD as GET). */
+ *  API_ONLY_ROUTES matches for that method (HEAD as GET), or a GET of a run's computer live view. */
 export function servedApiOnly(routes: readonly Route[], method: string | undefined, raw: string): boolean {
   if (!raw.startsWith("/v2/")) return false;
   const path = raw.slice(3);
   const asked = method === "HEAD" ? "GET" : method;
+  if (asked === "GET" && COMPUTER_LIVE.test(raw)) return true;
   return routes.some((route) => API_ONLY_ROUTES.has(route.name) && route.method === asked && route.pattern.test(path));
 }
 
