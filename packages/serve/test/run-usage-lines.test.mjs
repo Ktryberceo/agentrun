@@ -104,5 +104,5 @@ test("a run's usage is read in one snapshot of the store: no read is made outsid
   const outside = new Proxy({}, { get: (_, key) => { throw new Error(`read outside the snapshot: ${String(key)}`); } });
   const inside = { runs: { get: async () => ({ id: "run_1", state: "running" }) } };
   const store = new Proxy(outside, { get: (target, key) => (key === "snapshot" ? (read) => read(inside) : target[key]) });
-  assert.deepEqual(await runUsageOverStore(store, "run_1"), { run_id: "run_1", final: false, currency: "USD", total_usd: null, lines: null, reason: "running" });
+  assert.deepEqual(await runUsageOverStore(store, "run_1"), { run_id: "run_1", final: false, currency: "USD", total_usd: null, lines: null, browser_sessions: null, reason: "running" });
 });

@@ -14,6 +14,7 @@
 import { BACKGROUND_CONTEXT } from "@earendil-works/chord/context";
 import { RUNNER_RECORDS } from "@parcha/agentrun-kernel";
 import { TOOL_SESSION } from "@parcha/agentrun-kernel/kernel/cap";
+import { type BrowserSessionLine, browserSessionsOf } from "./browser-sessions.js";
 import { BROWSER_CHARGED } from "./cap.js";
 import { launchOf } from "./handed-values.js";
 import { inReflect, reflectRanges } from "./runner/end-of-run.js";
@@ -58,6 +59,9 @@ export type RunUsage = {
   /** The lines joined by the one rule (costWordsOf): the run's `cost.usd`. Null with no lines, or when a line's is. */
   total_usd: number | null;
   lines: UsageLine[] | null;
+  /** One record per browser session the run opened (browser-sessions.ts), for reconciling `browser_time` with the
+   *  provider's own bill; null exactly when `lines` is. */
+  browser_sessions: BrowserSessionLine[] | null;
   reason: UsageReason | null;
 };
 
@@ -161,7 +165,7 @@ export async function runUsageOverStore(store: Store, runId: string): Promise<Ru
   return store.snapshot(async (snapshot) => {
     const run = await snapshot.runs.get(runId);
     if (!run) return undefined;
-    const none = (reason: UsageReason, final: boolean): RunUsage => ({ run_id: runId, final, currency: "USD", total_usd: null, lines: null, reason });
+    const none = (reason: UsageReason, final: boolean): RunUsage => ({ run_id: runId, final, currency: "USD", total_usd: null, lines: null, browser_sessions: null, reason });
     if (!FINAL_STATES.includes(run.state)) return none("running", false);
     const launch = await launchOf(snapshot, runId);
     if (run.importedFrom || launch?.native || launch?.sdk) return none("not_booked", true);
@@ -171,6 +175,6 @@ export async function runUsageOverStore(store: Store, runId: string): Promise<Ru
     const turns = reflectRanges(records.submissions ?? [], records.entries);
     const entries = records.entries.filter((entry) => !inReflect(turns, Number(entry.id))) as EntryLike[];
     const { lines, total_usd } = usageLinesOf(entries);
-    return { run_id: runId, final: true, currency: "USD", total_usd, lines, reason: null };
+    return { run_id: runId, final: true, currency: "USD", total_usd, lines, browser_sessions: browserSessionsOf(entries), reason: null };
   });
 }
